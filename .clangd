@@ -1,0 +1,7 @@
+CompileFlags:
+  Add:
+    ""
+  CompilationDatabase: build/
+Diagnostics:
+  UnusedIncludes: None
+
