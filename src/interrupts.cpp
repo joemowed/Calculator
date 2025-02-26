@@ -1,5 +1,6 @@
 // this file contains definitions for the callback functions used by the HAL for
 // interrupts
+#include "Calculator.hpp"
 extern "C" {
 #include "main.h"
 #include "stm32f7xx.h"
@@ -12,8 +13,8 @@ extern "C" {
  *
  */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    HAL_GPIO_TogglePin(KEY_TEST_GPIO_Port, KEY_TEST_Pin);
-    HAL_GPIO_ReadPin(KEY_0_GPIO_Port, KEY_0_Pin);
-    HAL_GPIO_ReadPin(KEY_1_GPIO_Port, KEY_1_Pin);
+    if (htim->Instance == TIM6) {
+        kb.readAllKeys();
+    }
 }
 }

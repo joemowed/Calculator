@@ -314,9 +314,6 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(KEY_F3_GPIO_Port, KEY_F3_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(KEY_F1_GPIO_Port, KEY_F1_Pin, GPIO_PIN_RESET);
-
   /*Configure GPIO pin : ENABLE_13V_Pin */
   GPIO_InitStruct.Pin = ENABLE_13V_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -376,9 +373,8 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : KEY_F1_Pin */
   GPIO_InitStruct.Pin = KEY_F1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(KEY_F1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : VBUS_DETECT_Pin */

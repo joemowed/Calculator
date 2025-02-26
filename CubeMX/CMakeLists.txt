@@ -11,6 +11,7 @@ cmake_minimum_required(VERSION 3.22)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
+set(CMAKE_CXX_STANDARD 17)
 
 
 # Define the build type
@@ -28,7 +29,7 @@ include("cmake/gcc-arm-none-eabi.cmake")
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 # Enable CMake support for ASM and C languages
-enable_language(C ASM)
+enable_language(CXX C ASM)
 
 # Core project settings
 project(${CMAKE_PROJECT_NAME})

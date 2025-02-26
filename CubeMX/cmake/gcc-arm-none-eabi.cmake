@@ -10,7 +10,7 @@ set(CMAKE_CXX_COMPILER_ID GNU)
 # arm-none-eabi- must be part of path environment
 set(TOOLCHAIN_PREFIX                arm-none-eabi-)
 
-set(CMAKE_C_COMPILER                ${TOOLCHAIN_PREFIX}gcc)
+set(CMAKE_C_COMPILER                ${TOOLCHAIN_PREFIX}g++)
 set(CMAKE_ASM_COMPILER              ${CMAKE_C_COMPILER})
 set(CMAKE_CXX_COMPILER              ${TOOLCHAIN_PREFIX}g++)
 set(CMAKE_LINKER                    ${TOOLCHAIN_PREFIX}g++)
