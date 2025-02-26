@@ -6,7 +6,7 @@
 class Keyboard {
   private:
     // keyboard is polled every 3ms, debounce time = (3*DEBOUNCE_COUNT)ms, e.g. for 80ms debounce use 26
-    constexpr static const uint16_t DEBOUNCE_COUNT = 100; // The number of times the IRQ can read the key as high before the key will be registered as pressed again
+    constexpr static const uint16_t DEBOUNCE_COUNT = 40; // The number of times the IRQ can read the key as high before the key will be registered as pressed again
     // repeat time for a held key to register as repeated keypresses is (polling time)(DEBOUNCE_COUNT)(KEY_REPEAT_DELAY), e.g. 3ms*26*5 = 400ms repeat delay
     constexpr static const uint16_t KEY_REPEAT_DELAY = 4;
     constexpr static const std::size_t BUFFER_SIZE = 200;
@@ -36,7 +36,7 @@ class Keyboard {
         KeyHALPair HAL;
         uint16_t debounceCount;
         uint16_t repeatCount;
-        bool wasPressed;
+        RingBuffer<bool, DEBOUNCE_COUNT> rb;
         char keyChar;
     } Key;
     // gets the oldest key input from buffer, removes the read element from the buffer
@@ -53,27 +53,27 @@ class Keyboard {
     uint16_t bufferLength = 0; // number of valid data elements in buffer
     std::array<char, 1024> keyBuffer;
     std::array<Key, 21> keys = {{
-        {{KEY_F1_GPIO_Port, KEY_F1_Pin}, 0, 0, false, keyCodes.F1},
-        {{KEY_F2_GPIO_Port, KEY_F2_Pin}, 0, 0, false, keyCodes.F2},
-        {{KEY_F3_GPIO_Port, KEY_F3_Pin}, 0, 0, false, keyCodes.F3},
-        {{KEY_F4_GPIO_Port, KEY_F4_Pin}, 0, 0, false, keyCodes.F4},
-        {{KEY_0_GPIO_Port, KEY_0_Pin}, 0, 0, false, '0'},
-        {{KEY_1_GPIO_Port, KEY_1_Pin}, 0, 0, false, '1'},
-        {{KEY_2_GPIO_Port, KEY_2_Pin}, 0, 0, false, '2'},
-        {{KEY_3_GPIO_Port, KEY_3_Pin}, 0, 0, false, '3'},
-        {{KEY_4_GPIO_Port, KEY_4_Pin}, 0, 0, false, '4'},
-        {{KEY_5_GPIO_Port, KEY_5_Pin}, 0, 0, false, '5'},
-        {{KEY_6_GPIO_Port, KEY_6_Pin}, 0, 0, false, '6'},
-        {{KEY_7_GPIO_Port, KEY_7_Pin}, 0, 0, false, '7'},
-        {{KEY_8_GPIO_Port, KEY_8_Pin}, 0, 0, false, '8'},
-        {{KEY_9_GPIO_Port, KEY_9_Pin}, 0, 0, false, '9'},
-        {{KEY_NUM_GPIO_Port, KEY_NUM_Pin}, 0, 0, false, keyCodes.NUM},
-        {{KEY_RTN_GPIO_Port, KEY_RTN_Pin}, 0, 0, false, keyCodes.RTN},
-        {{KEY_DIV_GPIO_Port, KEY_DIV_Pin}, 0, 0, false, keyCodes.DIV},
-        {{KEY_MUL_GPIO_Port, KEY_MUL_Pin}, 0, 0, false, keyCodes.MUL},
-        {{KEY_SUB_GPIO_Port, KEY_SUB_Pin}, 0, 0, false, keyCodes.SUB},
-        {{KEY_ADD_GPIO_Port, KEY_ADD_Pin}, 0, 0, false, keyCodes.ADD},
-        {{KEY_DEL_GPIO_Port, KEY_DEL_Pin}, 0, 0, false, keyCodes.DEL},
+        {{KEY_F1_GPIO_Port, KEY_F1_Pin}, 0, 0, true, keyCodes.F1},
+        {{KEY_F2_GPIO_Port, KEY_F2_Pin}, 0, 0, true, keyCodes.F2},
+        {{KEY_F3_GPIO_Port, KEY_F3_Pin}, 0, 0, true, keyCodes.F3},
+        {{KEY_F4_GPIO_Port, KEY_F4_Pin}, 0, 0, true, keyCodes.F4},
+        {{KEY_0_GPIO_Port, KEY_0_Pin}, 0, 0, true, '0'},
+        {{KEY_1_GPIO_Port, KEY_1_Pin}, 0, 0, true, '1'},
+        {{KEY_2_GPIO_Port, KEY_2_Pin}, 0, 0, true, '2'},
+        {{KEY_3_GPIO_Port, KEY_3_Pin}, 0, 0, true, '3'},
+        {{KEY_4_GPIO_Port, KEY_4_Pin}, 0, 0, true, '4'},
+        {{KEY_5_GPIO_Port, KEY_5_Pin}, 0, 0, true, '5'},
+        {{KEY_6_GPIO_Port, KEY_6_Pin}, 0, 0, true, '6'},
+        {{KEY_7_GPIO_Port, KEY_7_Pin}, 0, 0, true, '7'},
+        {{KEY_8_GPIO_Port, KEY_8_Pin}, 0, 0, true, '8'},
+        {{KEY_9_GPIO_Port, KEY_9_Pin}, 0, 0, true, '9'},
+        {{KEY_NUM_GPIO_Port, KEY_NUM_Pin}, 0, 0, true, keyCodes.NUM},
+        {{KEY_RTN_GPIO_Port, KEY_RTN_Pin}, 0, 0, true, keyCodes.RTN},
+        {{KEY_DIV_GPIO_Port, KEY_DIV_Pin}, 0, 0, true, keyCodes.DIV},
+        {{KEY_MUL_GPIO_Port, KEY_MUL_Pin}, 0, 0, true, keyCodes.MUL},
+        {{KEY_SUB_GPIO_Port, KEY_SUB_Pin}, 0, 0, true, keyCodes.SUB},
+        {{KEY_ADD_GPIO_Port, KEY_ADD_Pin}, 0, 0, true, keyCodes.ADD},
+        {{KEY_DEL_GPIO_Port, KEY_DEL_Pin}, 0, 0, true, keyCodes.DEL},
     }};
 };
 

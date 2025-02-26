@@ -25,7 +25,7 @@ void Keyboard::writeKey(Key &key) {
             this->rb.writeData(key.keyChar);
             key.repeatCount = this->KEY_REPEAT_DELAY;
         } else {
-            key.repeatCount = (key.repeatCount > 0) ? (key.repeatCount - 1) : 0;
+            key.debounceCount = (key.debounceCount > 0) ? (key.debounceCount - 1) : 0;
         }
     } else {
         this->rb.writeData(key.keyChar);
