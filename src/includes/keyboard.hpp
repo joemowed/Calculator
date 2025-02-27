@@ -30,7 +30,7 @@ class Keyboard {
 
   public:
     // repeat time for a held key to register as repeated keypresses is (polling time)(KEY_REPEAT_DELAY), e.g. 3ms*133 = 399ms repeat delay
-    constexpr static const uint16_t KEY_REPEAT_DELAY = 200;
+    constexpr static const uint16_t KEY_REPEAT_DELAY = 290;
     struct KeyCodes {
         const char F1 = 0x1;      // character code for "F1" key
         const char F2 = 0x2;      // character code for "F2" key
