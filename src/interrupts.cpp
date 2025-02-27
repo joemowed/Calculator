@@ -14,7 +14,9 @@ extern "C" {
  */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM6) {
+        HAL_TIM_Base_Stop_IT(htim);
         kb.readAllKeys();
+        HAL_TIM_Base_Start_IT(htim);
     }
 }
 }

@@ -3,16 +3,35 @@
 #include "main.h"
 #include <array>
 #include <ringbuffer.hpp>
+// helper class for the keyboard
+class Key {
+  public:
+    struct KeyHALPair {
+        GPIO_TypeDef *port;
+        uint16_t pin;
+    } keyHALPair;
+    uint16_t repeatCounter = 0;
+    uint32_t readHistory = 0;
+    const char keyChar;
+    Key(struct KeyHALPair keyHalPair, const char keyChar);
+    // polls the output, performs the debouncing, and calculates if the keypress is held and to be repeated
+    // returns NULLKEY if the key is either not pressed, or not yet ready to emit again
+    char poll();
+
+  private:
+    // puts the read into the readhistory
+    void tick(volatile const bool &isPressed);
+    // helper function, emits the keyChar if the key repeat delay allows for a keypress, otherwise emits nullkey
+    char keyRepeat();
+};
 class Keyboard {
   private:
-    // keyboard is polled every 3ms, debounce time = (3*DEBOUNCE_COUNT)ms, e.g. for 80ms debounce use 26
-    constexpr static const uint16_t DEBOUNCE_COUNT = 40; // The number of times the IRQ can read the key as high before the key will be registered as pressed again
-    // repeat time for a held key to register as repeated keypresses is (polling time)(DEBOUNCE_COUNT)(KEY_REPEAT_DELAY), e.g. 3ms*26*5 = 400ms repeat delay
-    constexpr static const uint16_t KEY_REPEAT_DELAY = 4;
     constexpr static const std::size_t BUFFER_SIZE = 200;
 
   public:
-    const struct keyCodes {
+    // repeat time for a held key to register as repeated keypresses is (polling time)(KEY_REPEAT_DELAY), e.g. 3ms*133 = 399ms repeat delay
+    constexpr static const uint16_t KEY_REPEAT_DELAY = 200;
+    struct KeyCodes {
         const char F1 = 0x1;      // character code for "F1" key
         const char F2 = 0x2;      // character code for "F2" key
         const char F3 = 0x3;      // character code for "F3" key
@@ -25,20 +44,8 @@ class Keyboard {
         const char ADD = '+';     // character code for "ADD" key
         const char DEL = '.';     // character code for "DEL" (decimal) key
         const char NULLKEY = 0x7; // character code to return when the key buffer is empty
-    } keyCodes;
+    } constexpr static const keyCodes = {0x1, 0x2, 0x3, 0x4, 0x5, 0x6, '/', '*', '-', '+', '.', 0x7};
 
-    typedef struct KeyHALPair {
-        GPIO_TypeDef *port;
-        uint16_t pin;
-    } KeyHALPair;
-
-    typedef struct Key {
-        KeyHALPair HAL;
-        uint16_t debounceCount;
-        uint16_t repeatCount;
-        RingBuffer<bool, DEBOUNCE_COUNT> rb;
-        char keyChar;
-    } Key;
     // gets the oldest key input from buffer, removes the read element from the buffer
     char read();
     // reads all the keys, and writes the new keypresses to buffer.  Multiple keypresses are handled by writing them in the order of the the below array, ascending
@@ -47,34 +54,31 @@ class Keyboard {
   private:
     // reads GPIO for keypresses, handles debouncing
     void readKey(Key &key);
-    // writes keypresses to the keyboard ringbuffer, handles the key repeat delay
-    void writeKey(Key &key);
     RingBuffer<char, BUFFER_SIZE> rb = RingBuffer<char, BUFFER_SIZE>(Keyboard::keyCodes.NULLKEY);
     uint16_t bufferLength = 0; // number of valid data elements in buffer
     std::array<char, 1024> keyBuffer;
-    std::array<Key, 21> keys = {{
-        {{KEY_F1_GPIO_Port, KEY_F1_Pin}, 0, 0, true, keyCodes.F1},
-        {{KEY_F2_GPIO_Port, KEY_F2_Pin}, 0, 0, true, keyCodes.F2},
-        {{KEY_F3_GPIO_Port, KEY_F3_Pin}, 0, 0, true, keyCodes.F3},
-        {{KEY_F4_GPIO_Port, KEY_F4_Pin}, 0, 0, true, keyCodes.F4},
-        {{KEY_0_GPIO_Port, KEY_0_Pin}, 0, 0, true, '0'},
-        {{KEY_1_GPIO_Port, KEY_1_Pin}, 0, 0, true, '1'},
-        {{KEY_2_GPIO_Port, KEY_2_Pin}, 0, 0, true, '2'},
-        {{KEY_3_GPIO_Port, KEY_3_Pin}, 0, 0, true, '3'},
-        {{KEY_4_GPIO_Port, KEY_4_Pin}, 0, 0, true, '4'},
-        {{KEY_5_GPIO_Port, KEY_5_Pin}, 0, 0, true, '5'},
-        {{KEY_6_GPIO_Port, KEY_6_Pin}, 0, 0, true, '6'},
-        {{KEY_7_GPIO_Port, KEY_7_Pin}, 0, 0, true, '7'},
-        {{KEY_8_GPIO_Port, KEY_8_Pin}, 0, 0, true, '8'},
-        {{KEY_9_GPIO_Port, KEY_9_Pin}, 0, 0, true, '9'},
-        {{KEY_NUM_GPIO_Port, KEY_NUM_Pin}, 0, 0, true, keyCodes.NUM},
-        {{KEY_RTN_GPIO_Port, KEY_RTN_Pin}, 0, 0, true, keyCodes.RTN},
-        {{KEY_DIV_GPIO_Port, KEY_DIV_Pin}, 0, 0, true, keyCodes.DIV},
-        {{KEY_MUL_GPIO_Port, KEY_MUL_Pin}, 0, 0, true, keyCodes.MUL},
-        {{KEY_SUB_GPIO_Port, KEY_SUB_Pin}, 0, 0, true, keyCodes.SUB},
-        {{KEY_ADD_GPIO_Port, KEY_ADD_Pin}, 0, 0, true, keyCodes.ADD},
-        {{KEY_DEL_GPIO_Port, KEY_DEL_Pin}, 0, 0, true, keyCodes.DEL},
-    }};
+    std::array<Key, 21> keys = {
+        Key{{KEY_F1_GPIO_Port, KEY_F1_Pin}, keyCodes.F1},
+        Key{{KEY_F2_GPIO_Port, KEY_F2_Pin}, keyCodes.F2},
+        Key{{KEY_F3_GPIO_Port, KEY_F3_Pin}, keyCodes.F3},
+        Key{{KEY_F4_GPIO_Port, KEY_F4_Pin}, keyCodes.F4},
+        Key{{KEY_0_GPIO_Port, KEY_0_Pin}, '0'},
+        Key{{KEY_1_GPIO_Port, KEY_1_Pin}, '1'},
+        Key{{KEY_2_GPIO_Port, KEY_2_Pin}, '2'},
+        Key{{KEY_3_GPIO_Port, KEY_3_Pin}, '3'},
+        Key{{KEY_4_GPIO_Port, KEY_4_Pin}, '4'},
+        Key{{KEY_5_GPIO_Port, KEY_5_Pin}, '5'},
+        Key{{KEY_6_GPIO_Port, KEY_6_Pin}, '6'},
+        Key{{KEY_7_GPIO_Port, KEY_7_Pin}, '7'},
+        Key{{KEY_8_GPIO_Port, KEY_8_Pin}, '8'},
+        Key{{KEY_9_GPIO_Port, KEY_9_Pin}, '9'},
+        Key{{KEY_NUM_GPIO_Port, KEY_NUM_Pin}, keyCodes.NUM},
+        Key{{KEY_RTN_GPIO_Port, KEY_RTN_Pin}, keyCodes.RTN},
+        Key{{KEY_DIV_GPIO_Port, KEY_DIV_Pin}, keyCodes.DIV},
+        Key{{KEY_MUL_GPIO_Port, KEY_MUL_Pin}, keyCodes.MUL},
+        Key{{KEY_SUB_GPIO_Port, KEY_SUB_Pin}, keyCodes.SUB},
+        Key{{KEY_ADD_GPIO_Port, KEY_ADD_Pin}, keyCodes.ADD},
+        Key{{KEY_DEL_GPIO_Port, KEY_DEL_Pin}, keyCodes.DEL},
+    };
 };
-
 #endif

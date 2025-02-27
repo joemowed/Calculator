@@ -1,6 +1,38 @@
 #include <keyboard.hpp>
 #include <main.h>
 
+Key::Key(struct KeyHALPair keyHalPair, const char keyChar) : keyHALPair(keyHalPair), keyChar(keyChar) {}
+
+void Key::tick(volatile const bool &isPressed) {
+    this->readHistory <<= 1;
+    if (isPressed) {
+        this->readHistory |= static_cast<uint32_t>(1U);
+    }
+}
+
+char Key::poll() {
+    // logic low is a pressed key
+    volatile const bool isPressed = !HAL_GPIO_ReadPin(this->keyHALPair.port, this->keyHALPair.pin);
+    // return the nullkey by default
+    char ret = Keyboard::keyCodes.NULLKEY;
+    if (isPressed) {
+        if (this->readHistory == UINT32_MAX) {
+            // do the key repeat algo here
+            ret = this->keyRepeat();
+        } else if (this->readHistory == 0U) {
+            ret = this->keyChar;
+        }
+    }
+    this->tick(isPressed);
+    return ret;
+}
+
+char Key::keyRepeat() {
+    bool repeatValid = this->repeatCounter == Keyboard::KEY_REPEAT_DELAY;
+    this->repeatCounter = (repeatValid) ? 0 : (this->repeatCounter + 1);
+    return (repeatValid) ? this->keyChar : Keyboard::keyCodes.NULLKEY;
+}
+
 char Keyboard::read() { return this->rb.readData(); }
 void Keyboard::readAllKeys() {
     for (Key &key : this->keys) {
@@ -9,25 +41,8 @@ void Keyboard::readAllKeys() {
 }
 void Keyboard::readKey(Key &key) {
     // logic low for pressed keys
-    bool isPressed = !HAL_GPIO_ReadPin(key.HAL.port, key.HAL.pin);
-    if (isPressed && (key.debounceCount == 0)) {
-        this->writeKey(key);
-        key.debounceCount = this->DEBOUNCE_COUNT;
-    }
-    key.debounceCount = (key.debounceCount > 0) ? (key.debounceCount - 1) : 0;
-    key.wasPressed = isPressed;
-}
-void Keyboard::writeKey(Key &key) {
-    // if the key was pressed in the last poll, only write the key to the ringbuffer if the repeatCount is at 0
-    // always write the key to the ringbuffer if it was not pressed in the last poll
-    if (key.wasPressed) {
-        if (key.repeatCount == 0) {
-            this->rb.writeData(key.keyChar);
-            key.repeatCount = this->KEY_REPEAT_DELAY;
-        } else {
-            key.debounceCount = (key.debounceCount > 0) ? (key.debounceCount - 1) : 0;
-        }
-    } else {
-        this->rb.writeData(key.keyChar);
+    const char tmp = key.poll();
+    if (tmp != this->keyCodes.NULLKEY) {
+        this->rb.writeData(tmp);
     }
 }
